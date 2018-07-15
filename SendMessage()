@@ -1,0 +1,45 @@
+SendMessage() 마우스 조작을 하고 싶을 때
+C# & MFC 2010
+
+출처: http://mainia.tistory.com/437 [녹두장군 - 상상을 현실로]
+
+프로그램을 최소화 해서 윈도우 마우스조작을 해보기로 한다.
+Spy++ 에서 프로세스 메시지를 살펴보면 SendMessage WM_MOUSEMOVE,
+
+WM_LBUTTONDOWN 등등의 이벤트가 발생하는 것을 볼수 있다.
+
+ 
+
+이것을 구현하기 위해서 SendMessage(HWND handle, ANY type, ANY event , LONG coords) API 함수는 동작하지 않는다. 제대로 작동시킬려면 PostMessage 함수를 사용해야한다.
+
+아래 예제는 마우스 포인트를 옮겼을 때 5초후 이전에 있는 포인트로 마우스를 옮기는 예제이다
+
+long coord;
+if(GetCursorPos(pos)){
+    coord = MAKEWORD(pos->x,pos->y);
+}
+else {
+    Sleep(5000);
+    return;
+}
+ 
+//Sleep(5000);
+//SendMessage(window, MOUSEMOVE, 0, MAKELONG(pos->x,pos->y));
+//Sleep(100);
+Sleep(5000);
+ 
+CWnd* window = GetForegroundWindow();//FindWindow(NULL,"Documents");
+//PostMessage(window, WM_MOUSEMOVE, 0, coord);
+window->PostMessageW(WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(pos->x,pos->y));
+window->PostMessageW(WM_LBUTTONUP  , MK_LBUTTON, MAKELPARAM(pos->x,pos->y));
+ 
+Sleep(5000);
+SetCursorPos(pos->x, pos->y);
+window->PostMessageW(WM_LBUTTONDOWN, MK_LBUTTON, 0 );
+window->PostMessageW(WM_LBUTTONUP  , MK_LBUTTON, 0 );
+
+
+출처: http://mainia.tistory.com/437 [녹두장군 - 상상을 현실로]
+
+
+다른 프로세스에 클릭 이벤트 보내기
