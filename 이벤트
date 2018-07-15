@@ -1,0 +1,245 @@
+1. 찾기 힘든 핸들값?!
+
+앞의 강좌에 삘(Feel)을 받아 이것저것 많은 이벤트 보내기 실습을 해본 사람이라면..
+여러 응용프로그램의 핸들을 찾던 도중 안풀리는 몬가의 문제거리를 발견 했을거라 생각한다.
+물론 이강좌를 이해하려면 앞의 예제를 다른 프로그램에 많이 응용을 해봐야 한다.
+그리고 어떤 문제거리를 받아 보아야만 이 강좌가 엄청의 감동의 물결을 가져다 줄것이다.
+그렇다면 몬가 안풀리는 문제거리를 그림을 통해서 살펴보도록 하자.
+
+
+
+그림1(몬가 이상한 핸들구조)
+
+위에서 본 그림을 살펴보면..
+한 응용프로그램의 핸들아래 세개의 핸들이 있는 구조이다..(색칠한 부분)
+그리고 자기가 이벤트를 보내고자하는 부분은 그 핸들들의 첫번째핸들에 속해있는 버튼인 것이다.
+근데 세개의 핸들이 클래스명 자리에 #32770 이라는 클래스명이 들어가있다.
+이것은 MFC에서 개발을 할때 클래스 명을 숨겨버렸기에 #32770이라는 결과가 나오는 것이다.
+캡션값도 없고..클래스명도 없고 이럴 때는 어떻게 핸들을 찾아 갈것인가??
+대략 난감하다.._-_
+만약 #32770이 한개라면 findwindowEx()함수에 클래스명을 #32770이라고 써주면 잘 찾게 되지만.
+위와같은 구조에서는 자기가 얻고자하는 핸들을 정확히 가지고 올수 없다..
+이것을 해결하기 위해서는 트리구조의 원리를 가지고 접근을 해야한다는 것이다.
+윈폼에서 작업했던 트리노드를 생각해보자. 자식의 부모의..모 이런식의 개념인 것이다.
+그렇다면 여기서 알아야할 API함수가 있다..바로 GetWindow() 라는 함수이고
+이함수가 이문제의 해결을 해줄수 있는 해결책이다.
+
+2. GetWindow()함수를 이용하여 핸들값 찾기
+
+C#에서의 선언은 다음과 같다.
+
+[DllImport("user32.dll")] 
+public static extern IntPtr GetWindow(IntPtr hWnd, int uCmd);
+
+첫번째 인자는 대상이 되는 핸들값이고 바로 두번째가 그 대상핸들의 자식,혹은 바로 아래 핸들.
+부모핸들..이런 식으로0~5까지 값으로 구별하여 접근할수가 있는것이다.
+
+const int GW_HWNDFIRST = 0;
+const int GW_HWNDLAST = 1;
+const int GW_HWNDNEXT = 2;
+const int GW_HWNDPREV = 3;
+const int GW_OWNER = 4;
+const int GW_CHILD = 5;
+
+정의는 다음과 같다.대충 보면 어떤 값들인지 알것이다.
+위의 그림을 보자..최상위 핸들값을 hwnd_main이라고 하고 
+한번 두번째 자식의 값을 가져오고 싶다면 다음과 같이 접근하면될것이다.
+
+int hwnd_first=GetWindow(hwnd_main,GW_CHILD); //첫번째 자식의 핸들값->바로 자식의 핸들값을 가져오므로
+
+int hwnd_second=GetWindow(hwnd_first,GW_HWNDNEXT); //첫번째 아래에 있는 핸들값 바로 두번째 핸들값
+
+이런식으로 접근을 하면 두번째 핸들을 정확히 접근할수 있을 것이다.
+이부분의 예제는 생략하겠다. 나중에 핸들을 찾다가 다음과 같이 접근이 불가능 한 상황이 되었다면
+GetWindow()함수를 사용하라는 것만 전해주고 싶다.
+그럼 핸들에 관련된 여러 API함수를 알아 보도록 하겠다.
+
+3.여러가지 핸들 관련 함수들
+
+＊GetWindowText()
+
+[DllImport("user32.dll")] 
+private static extern int GetWindowText(int hWnd, StringBuilder title, int size);
+
+이 함수는 핸들값을 넘겨주면 그 핸들값이 가지고 있는 캡션값을 반환하여준다.
+첫번째 인자는 알아내고자하는 핸들대상이고..그 윈도우의 캡션값은 두번재 인자값으로 
+반환하여 준다. 세번째는 받을 텍스트값의 최대 크기를 정해주는 것이다.
+
+
+＊ShowWindowAsync()
+
+[DllImport("user32.dll")] 
+private static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+
+이 함수는 윈도우의 창의 상태를 변경시킨다. 두번째 인자값을 어떻게 넘겨주느냐에 따라서 상태가 변하고.
+첫번째는 변화시키고자 하는 핸들값이다.
+상태에 대한 값은 아래 값들을 참고하길..
+
+private const int SW_HIDE = 0;
+private const int SW_SHOWNORMAL = 1;
+private const int SW_SHOWMINIMIZED = 2;
+
+
+--------------------------------------------------
+
+
+1. 마우스 이벤트
+
+오늘의 주제는 마우스 이벤트 입니다. 지금까지 해왔던 응용프로그램 조이기중에 가장 쉽지 않을까 생각이 듭니다^^ 우리가 윈도우 상에서 움직이는 마우스를 제어하는 것입니다. API함수 두개만 알아보고 바로 데모로 들어 가도록 하겠습니다. 
+
+2. Mouse 관련 이벤트 함수
+
+가장 많이 쓰이는 MOUSE관련 이벤트 함수 딱 두개를 소개하려고 합니다. MSDN에 이 두개의 함수에 대해서 너무나 잘 설명하고 있기에 자세한 설명은 하지 않고 C# 문법으로 임포트 시켜 선언 하는 문법정도만 보도록 하겠습니다..
+
+2.1 mouse_event 함수
+
+마우스의 일어나는 여러가지 동작들을 전달해 줍니다. 예를들어서 마우스 버튼클릭 이라던가 휠움직이기등등
+
+선언하기
+[DllImport("user32.dll")] public static extern void mouse_event(int dwFlags,int dx,int dy,int cButtons,int dwExtraInfo);
+
+자세한 설명:
+ms-help://MS.VSCC.2003/MS.MSDNQTR.2003FEB.1042/wcesdkr/htm/_wcesdk_win32_mouse
+_event.htm
+
+2.2 SetCursorPos 함수
+
+마우스 커서 위치를 설정한다
+
+선언하기
+[DllImport("user32.dll")] public static extern int SetCursorPos(int x,int y);
+
+자세한 설명:
+ms-help://MS.VSCC.2003/MS.MSDNQTR.2003FEB.1042/wcesdkr/htm/_wcesdk_Win32_SetCu
+rsorPos.htm
+
+
+3. DEMO 프로그램
+
+
+using System;
+using System.Runtime.InteropServices;
+namespace MouseEvent
+{
+ class MouseEvents
+ {
+  [DllImport("user32.dll")]
+  public  static extern void  mouse_event(int  dwFlags,int  dx,int  dy,int  cButtons,int  dwExtraInfo);
+
+  [DllImport("user32.dll")]
+  public  static extern int  SetCursorPos(int  x,int  y);
+
+  //상수값
+  public const int WM_LBUTTONDOWN = 0x0202;
+  public const int WM_LBUTTONUP = 0x0201;
+
+  [STAThread]
+  static void Main(string[] args)
+  {
+   //마우스를 맘껏 움직여보자
+   Console.WriteLine("마우스를 움직 입니다.(Enter)");
+   Console.ReadLine();
+   
+   for(int i=0;i<1000;i++)
+   {
+    Random y=new Random();
+    SetCursorPos(y.Next(800),y.Next(600));
+   }
+
+   // 마우스를 클릭해보자.
+   Console.WriteLine("마우스를 다운 합니다. 콘솔창안에 마우스를 위치 시키세요.(Enter)");
+   Console.ReadLine();
+
+   mouse_event(WM_LBUTTONDOWN,0,0,0,0);
+
+   Console.WriteLine("이제 마우스를 움직여 보세요");
+   Console.ReadLine();
+
+  }
+ }
+}
+
+ 
+
+[그림1] 실행 화면
+
+
+------------------------------------------------------------------------
+
+
+
+1. 키보드 이벤트
+
+오늘은 저번 강좌에서 보여주었던 마우스 이벤트가 아닌 키보드 이벤트를 보내 보려고 합니다. 키보드가 누른것과 같은 효과를 일으켜 주는것이죠.저번에 했던 마우스 이벤트에 이어서의 기초 지식이 되는 초급수준의 강좌입니다. 우리가 윈도우 상에서 누르는는 키보드를 제어하는 것입니다. 아주 쉽기 때문에 API함수 하나만 알아보고 바로 데모로 들어 가도록 하겠습니다. 정말 쉽습니다.. ㅋ ㅑ ㅋ ㅑ~
+
+2. KEYBD_EVENT 이벤트 함수
+
+[선언하기]
+
+[DllImport("User32.dll")] 
+public static extern void keybd_event( 
+byte bVk, // virtual-key code 
+byte bScan, // hardware scan code 
+int dwFlags, // function options 
+ref int dwExtraInfo // additional keystroke data 
+);
+
+
+자세한 설명:
+MS-help://MS.VSCC.2003/MS.MSDNQTR.2003FEB.1042/winui/winui/windowsuserinterface/
+userinput/keyboardinput/keyboardinputreference/keyboardinputfunctions/keybd_event.htm
+
+자 이 Keybd_Event만 정의 할수 있다면 끝난것이다. 정말 간단하다. 이제 앞에서 많이 연습했던 keydown이나 keyup 같은 상수를 이용해서 메세지를 보내주면 되는것이다. 그럼 한번 간단하게 DEMO를 통해서 이벤트를 자세하게 살펴 보도록 하겠습니다.
+
+
+2.2 SetCursorPos 함수
+
+마우스 커서 위치를 설정한다
+
+선언하기
+[DllImport("user32.dll")] public static extern int SetCursorPos(int x,int y);
+
+자세한 설명:
+ms-help://MS.VSCC.2003/MS.MSDNQTR.2003FEB.1042/wcesdkr/htm/_wcesdk_Win32_SetCu
+rsorPos.htm
+
+
+3. DEMO 프로그램
+
+자 이제 콘솔 응용 프로그램을 띄어 보시구여, 이번 예제는 많이들 사용하시는 ALT+TAB 이벤트를 실행해 보도록 하겠습니다.
+
+using System;
+using System.Runtime.InteropServices;
+namespace Keybd_Event
+{
+ class Class1
+ {
+  [DllImport("User32.dll")] 
+  //선언합니다.
+  public static extern void keybd_event( 
+   byte bVk, // virtual-key code 
+   byte bScan, // hardware scan code 
+   int dwFlags, // function options 
+   ref int dwExtraInfo // additional keystroke data 
+   );
+
+  [STAThread]
+  static void Main(string[] args)
+  {
+   const byte AltKey = 18;
+   const byte TabKey = 9;
+   const int KEYUP = 0x0002;
+
+   int Info=0;
+   for(int i=0;i<10;i++)
+   {
+    keybd_event(AltKey, 0, 0, ref Info);   // ALT key 다운
+    keybd_event(TabKey, 0, 0, ref Info);   // TAB key 다운
+    keybd_event(TabKey, 0, KEYUP, ref Info);  // TAB key 업
+    keybd_event(AltKey, 0, KEYUP, ref Info);  // ALT key 업
+    
+   }
+
+  }
+ }
+}
