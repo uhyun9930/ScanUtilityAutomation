@@ -1,0 +1,89 @@
+1. 이벤트 메세지 보내보기
+
+이전 강좌에서 메신저의 핸들을 찾아내 봤을것이다.
+만약 성공적으로 구하고자 하는 핸들값을 찾아 내 봤다면 
+이제 한번 그 버튼을 클릭하는 이벤트를 보내기 위해서는 이벤트를 
+보내는 API함수를 알아야할 것이다. 먼저 이벤트를 보내는 API함수 
+중에 SendMessage()대해 알아보도록 하겠다.
+
+1.2 SendMessage() 이벤트 전달함수
+
+C#에서의 함수 선언은 다음과 같이 한다.
+
+[DllImport("user32.dll")]
+public  static extern int  SendMessage(int hwnd,int wMsg,int wParam,int lParam);
+
+첫번째 인자값은 이벤트를 보낼 핸들 값을 넣어주고, 두번째 인자값은 이벤트 메세지에 해당된다.
+세번째와 네번째 인자값은 그에 따른 부수저인 메세지를 전달되는 것이다.
+메세지에 대한 정의는 파일로 첨부 하였으니 상황에 따라 참고해서 쓰면 될 것이다.
+이벤트 상황에 따라 SendMessage()함수가 다르게 쓰이므로 많은 연습이 필요할 것이다.
+
+
+2. MSN메신저5.0 제어 해보기
+
+먼저 바로 전 강좌에서 핸들값을 가져오는것이 성공하였다면 바로 이벤트 예제를 해보도록 하자.
+
+2.1 핸들값의 구조파악
+
+[그림1]예제핸들
+
+ 
+
+그림1에 보이는 핸들 구조는 필자의 메신저의 즐겨쓰는버튼버튼까지의 핸들 구조를 열어 본것이다.
+FindWindow함수와 FindwWindowEX로 버튼의 핸들값을 알아낸 후 클릭 이벤트를 줄것이다.
+
+2.2 제어하기 예제 코드
+
+
+using System;
+using System.Runtime.InteropServices; //추가..
+
+namespace _1_1Con
+{
+    class Class1
+    {
+        //API함수를 선언한다.        
+
+        [DllImport("user32.dll")]
+        public  static extern int  FindWindow(string  lpClassName,string lpWindowName);
+
+        [DllImport("user32.dll")]
+        public  static extern int  FindWindowEx(int  hWnd1,int  hWnd2,string  lpsz1,string  lpsz2);
+
+        [DllImport("user32.dll")]
+        public  static extern int  SendMessage(int  hwnd,int  wMsg,int  wParam,int  lParam);
+
+        [STAThread]
+        static void Main(string[] args)
+        {
+            //핸들값을 찾아보자
+            int hw1=FindWindow(null,"MSN Messenger");
+            Console.WriteLine("핸들값1:"+hw1.ToString());
+
+            int hw2=FindWindowEx(hw1,0,"PluginHostClass",null);
+            Console.WriteLine("핸들값2:"+hw2.ToString());
+
+            int hw3=FindWindowEx(hw2,0,"MSNMSBLGeneric",null);
+            Console.WriteLine("핸들값3:"+hw3.ToString());
+
+            int hw4=FindWindowEx(hw3,0,"MSNMSBLGeneric","Task List");
+            Console.WriteLine("핸들값4:"+hw4.ToString());
+
+            int hw5=FindWindowEx(hw4,0,"Button","즐겨쓰는 메뉴");
+            Console.WriteLine("핸들값5:"+hw5.ToString());
+
+            //여기까지 출력이 되었다면 버튼 핸들값까지 알아내는것이 성공!!
+
+            const int WM_LBUTTONDOWN = 0x0201;
+            const int WM_LBUTTONUP = 0x0202;
+            const int BM_CLICK = 0x00F5;
+
+            //마우스 클릭이벤트이다
+            SendMessage(hw5,BM_CLICK,0,1);
+
+            //마우스 다운+업=클릭 이므로 이렇게 사용해도 무방하다
+            SendMessage(hw5,WM_LBUTTONDOWN,0,1);
+            SendMessage(hw5,WM_LBUTTONUP,0,1);        
+        }
+    }
+}
