@@ -1,0 +1,112 @@
+1. API함수를 이용한 핸들찾기
+
+핸들을 찾기위해 알아야 할 기초적 API함수들을 알아 보도록 하겠다.
+
+1_1.FindWindow()
+
+가장 최상위의 핸들을 찾는 함수이며 인자값으로 클래스이름과 캡션값을 넘겨준다.
+
+C#에서의 선언하기
+
+[DllImport("user32.dll")]
+public  static extern int  FindWindow(string  lpClassName,string  lpWindowName);
+
+첫번째 인자값은 찾고자하는 클래스이름,두번째는 캡션값을 넘겨준다.
+둘중 하나의 값만 주어도 찾을수 있지만 캡션명이 똑같은 프로그램이 실행중이라면,
+클래스명이 필요할것이다.리턴값은 그 캡션명과 클래스 이름을 가지고 있는 핸들값이다.
+이런 캡션명과 클래스명은 spy++프로그램을 통해서 알수 있다.
+하지만 이함수는 단지 한프로그램의 최상위 핸들 값만 리턴해줄 뿐이고,
+자식들의 핸들값들은 FindWindowEX()라는 함수를 통해 알 수가 있다.
+
+참고자료:ms-help://MS.VSCC/MS.MSDNVS.1042/winui/windows_03sn.htm
+
+1_2.FindWindowEX()
+
+인자값으로 받은 핸들의 자식 핸들을 찾는 클래스이다.
+
+[C#에서의 선언]
+
+[DllImport("user32.dll")]
+public  static extern int  FindWindowEx(int  hWnd1,int  hWnd2,string  lpsz1,string  lpsz2);
+
+첫번째 인자값은 바로 위의 부모값을 주고, 두번째 인자값은 0이나 null을 주자.
+세번째와 네번째 인자값에는 FindWindow와 마찬가지로 클래스명과 캡션명을 넘겨주면
+첫번째 인자로 넘겨주었던 핸들자식중에 세번째 네번째 주었던 인자값의 해당하는 핸들을 찾는것이다.
+만약 핸들을 찾으면 핸들값을 리턴해주고 그렇지 않으면 0을 리턴한다.
+
+참고자료:ms-help://MS.VSCC/MS.MSDNVS.1042/winui/windows_1zjs.htm
+
+
+
+2. SPY++따라하기
+
+이 두개의 함수만으로도 일단 왠만한 핸들은 다 접근할수 있을거라 생각한다.
+그렇다면 이제 SPY++을 통해 캡션명과 클래스이름을 알아 보는 방법을 보자.
+
+
+
+[그림1]SPY++의 실행
+
+ 
+
+
+
+[그림2] 기본 메뉴의 설명
+
+ 
+
+
+
+[그림3] SPY++캡션명과 클래스명
+
+ 
+
+
+
+[그림4] SPY++의 핸들 속성
+
+ 
+
+ 
+
+이 SPY++을 주물럭 주물럭 하다보면 쉽게 익숙해 질것이다.
+그렇다면 이제 한번 예제를 통해서 핸들값을 가져오는 연습을 한번 해보자
+아래의 예제는 위에 [그림4] 에 나오는 필자의 msn메신저5.0버전을 
+FindWindow와 FindWindowEX를 통해서 한번 접근해 본것이다.
+
+3. 핸들값 찾기 예제(ConSole Program)
+
+using System;
+using System.Runtime.InteropServices; //추가.. namespace _1_1Con
+{
+    class Class1
+    {
+        //API함수를 선언한다.
+        [DllImport("user32.dll")]
+        public  static extern int  FindWindow(string  lpClassName,string  lpWindowName);
+        [DllImport("user32.dll")]
+        public  static extern int  FindWindowEx(int  hWnd1,int  hWnd2,string  lpsz1,string  lpsz2);
+
+        [STAThread]
+        static void Main(string[] args)
+        {
+            Console.WriteLine("메신저의 핸들값은?");
+            Console.WriteLine("캡션값만 입력한 핸들값 : "+FindWindow(null,"MSN Messenger").ToString());
+            Console.WriteLine("클래스명만 입력한 핸들값 :"+FindWindow("MSNMSBLClass",null).ToString());
+            //클래스명과 핸들값둘중 하나만 입력해도 값은 똑같이 리턴이 된다.
+            //그렇다면 이제 부모핸들값을들 저장시키면서 한번 그림 4에 있는 대화상대 추가 핸들값을 알아내보자.             int hw1=FindWindow(null,"MSN Messenger");
+            Console.WriteLine("핸들값1:"+hw1.ToString());
+            int hw2=FindWindowEx(hw1,0,"PluginHostClass",null);
+            Console.WriteLine("핸들값2:"+hw2.ToString());
+            int hw3=FindWindowEx(hw2,0,"MSNMSBLGeneric",null);
+            Console.WriteLine("핸들값3:"+hw3.ToString());
+            //여기까지 눈으로 내려온것이 확인이 되었다면 밑에 클래스 명들을 살펴보자.
+            //그러면 분면 클래스 이름 두개가 같은것이 확인이 될것이다.그러기에 반드시 여기에는 캡션명을 같이 해주어야한다.
+
+            int hw4=FindWindowEx(hw3,0,"MSNMSBLGeneric","Task List");
+            Console.WriteLine("핸들값4:"+hw4.ToString());
+            int hw5=FindWindowEx(hw4,0,"Button","전화 걸기");
+            Console.WriteLine("핸들값5:"+hw5.ToString());
+            //여기까지 출력이 되었다면 버튼 핸들값까지 알아내는것이 성공!!         }
+    }
+}
