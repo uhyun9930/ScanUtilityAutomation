@@ -1,0 +1,81 @@
+API함수를 이용한 바탕화면 바꾸기
+          [ 임의로 바탕화면 바꾸기  ]
+ 
+ 
+
+ACDsee나 그림판에보면, 그림을 바탕화면으로 바꾸는 기능이 있죠 ? 이번에는 그걸 도전해 보겠습니다. 대부분의 API함수는 윈도우의 정보나 기능을 직접적으로 제어할 때 편리합니다. 바탕화면을 제어하는 것 역시 API함수를 이용할 수 있습니다. 함 보시죠~
+
+ 
+ 
+ 
+
+바탕화면 바꾸기 함수를 맹글어 보자~
+
+ 
+
+바탕화면을 제어하는 것은 레지스트리에서 관리합니다. 우선 코드를 보죠.
+
+ 
+
+void SetWallPaper(LPCTSTR pszFileName, int nTile)
+{
+
+HKEY hKey;
+static char tile[2];
+long lRet;
+
+tile[0]='0'+nTile;
+tile[1]='\0';
+
+lRet = ::RegOpenKeyEx(HKEY_CURRENT_USER, "Control Panel\\desktop", 0, KEY_WRITE | KEY_READ, &hKey);
+::RegSetValueEx(hKey, "TileWallpaper", 0, REG_SZ, (const unsigned char *) tile, 1);
+::RegCloseKey(hKey);
+::SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, (void *) pszFileName, SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE);
+
+}
+ 
+
+　 설  명~
+
+ 
+
+lRet = ::RegOpenKeyEx(HKEY_CURRENT_USER, "Control Panel\\desktop",0, KEY_WRITE|KEY_READ, &hKey);
+
+
+레지스트리의 위치키값을 가져옵니다.(상세설명은 CPU정보얻기에서 참고하세여)
+
+ 
+
+::RegSetValueEx(hKey, "TileWallpaper", 0, REG_SZ, (const unsigned char *) tile, 1);
+::RegCloseKey(hKey);
+
+ 
+
+바탕화면의 표시 방법(center/tile)을 제어 하기 위한 부분입니다. Windows의 레지스트리를 직접 조작해 실현합니다. hKey값은 닫아줍니다.
+
+ 
+
+::SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, (void *) pszFileName, SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE);
+
+ 
+
+   바탕화면의 파일명을 설정합니다. pszFileName에 바탕화면의 파일명을 줍니다. SPIF_SENDWINICHANGE는, 바탕화면등의 시스템에 관한 정보를 갱신했다고 하는 메세지를 각 어플리케이션에 발신하기 위해서고, SPIF_UPDATEINIFILE는 레지스트리에 벽지 파일명을 기록 하기 위한 것입니다.(Win31에서는 WIN.INI에 기록되게 되어 있던 것이, Win95/98에서는 레지스트리에 저장됩니다.)
+
+ 
+
+여기서, 레지스트리에 저장되는 바탕화면 정보를 보면 아래와 같습니다.
+
+ 
+
+파일명
+마이 컴퓨터 \HKEY_CURRENT_USER\Control Panel\desktop\Wallpaper 
+ 
+표시방법
+마이 컴퓨터 \HKEY_CURRENT_USER\Control Panel\desktop\TileWallpaper 
+ 
+
+ 
+
+바탕화면바꾸기위해서는 Reg계 함수를 사용하므로,  #include <winreg.h>를 포함시켜 주세요~
+
+ 
