@@ -1,0 +1,22 @@
+ Console.WriteLine("메신저의 핸들값은?");
+            Console.WriteLine("캡션값만 입력한 핸들값 : "+FindWindow(null,"MSN Messenger").ToString());
+            Console.WriteLine("클래스명만 입력한 핸들값 :"+FindWindow("MSNMSBLClass",null).ToString());
+ 
+
+            //클래스명과 핸들값둘중 하나만 입력해도 값은 똑같이 리턴이 된다.
+            //그렇다면 이제 부모핸들값을들 저장시키면서 한번 그림 4에 있는 대화상대 추가 핸들값을 알아내보자.             int hw1=FindWindow(null,"MSN Messenger");
+            Console.WriteLine("핸들값1:"+hw1.ToString());
+            int hw2=FindWindowEx(hw1,0,"PluginHostClass",null);
+            Console.WriteLine("핸들값2:"+hw2.ToString());
+            int hw3=FindWindowEx(hw2,0,"MSNMSBLGeneric",null);
+            Console.WriteLine("핸들값3:"+hw3.ToString());
+ 
+
+            //여기까지 눈으로 내려온것이 확인이 되었다면 밑에 클래스 명들을 살펴보자.
+            //그러면 분면 클래스 이름 두개가 같은것이 확인이 될것이다. 여기에는 캡션명을 같이 해주어야한다.
+
+            int hw4=FindWindowEx(hw3,0,"MSNMSBLGeneric","Task List");
+            Console.WriteLine("핸들값4:"+hw4.ToString());
+            int hw5=FindWindowEx(hw4,0,"Button","전화 걸기");
+            Console.WriteLine("핸들값5:"+hw5.ToString());
+            //여기까지 출력이 되었다면 버튼 핸들값까지 알아내는것이 성공!
