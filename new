@@ -1,0 +1,139 @@
+
+ 호수gg님이 하시려는 작업이 외부 프로그램을 실행시킨 후 그 프로그램이 직접 만드신 폼 위에 Child로 붙이는 것이군요.
+
+가장 간단한 방법은 외부 프로그램의 윈도우 핸들을 얻어와 그 핸들을 가지고 작업하는 것인데 
+
+외부 프로그램이 이미 실행된 상태인 경우엔 윈도우의 캡션을 알고 있으므로 윈도우 핸들을 얻어오는 것이 간단하지만
+
+외부 프로그램을 실행 시킨 후 윈도우 핸들을 얻어오려면 약간의 문제가 생깁니다.
+
+만약 외부 프로그램을 실행시키고 바로 FindWindow 함수로 실행시킨 윈도우를 찾으면 아직 실행시킨 윈도우가 표시가 안 
+되었기 때문에 윈도우 핸들 값을 얻어올 수없는 경우가 발생합니다.
+
+그래서 윈도우 핸들을 얻을 때 프로세스 ID를 이용하는 방법이 있습니다.
+
+
+프로그램을 실행하면 프로그램마다 프로세스 ID가 부여되는데 이는 프로그램이 실행됨과 동시에 생성됩니다.
+
+하지만 윈도우 핸들은 윈도우가 완전이 표시되기 전 까지는 NULL 값이 됩니다.
+
+그래서 스래드를 이용해서 바탕화면으로부터 시작하여 모든 윈도우의 프로세스 ID를 검색하여 내가 실행한 외부 프로그램 
+ID와 검색된 프로세스 ID를 비교하여 ID가 일치하면 그 핸들 값이 NULL인지 아닌지를 확인하고 NULL이면 다시 처음부터 검색을 반복하여 유효한 윈도우 핸들을 얻는 방법이 있습니다.
+
+윈도우 핸들을 얻으면 다음 작업은 윈도우 핸들을 이용해 내가 만든 폼의 Child로 만드는 작업입니다.
+
+새로 실행한 외부 프로그램은 윈도우 타이틀, 테두리를 가지고 있기때문에 그대로 폼 안에 넣게 되면 타이틀과 테두리가 보여 보기에 좋지 않습니다.
+
+그래서 캡션과 테두리를 없애는 작업을 해줘야합니다.
+
+
+
+아래의 예제 코드는 VNCViewer를 띄우고 윈 폼 내의 탭페이지에 삽입하는 예제입니다.
+
+참고해보시기 바랍니다.
+
+
+
+ProcessStartInfo si = new ProcessStartInfo();
+si.UseShellExecute = true;
+si.FileName = "VNCVIewer.exe";
+si.Arguments = arguments;
+si.WindowStyle = ProcessWindowStyle.Maximized;
+p = Process.Start(si);
+
+ParameterizedThreadStart threadstart = new ParameterizedThreadStart(ThreadWaitForVNCViewer);
+Thread thread = new Thread(threadstart);
+thread.Srart(p);
+
+public void ThreadWaitForVNCViewer(object arg)
+{
+            try
+            {
+                System.Diagnostics.Process p = (System.Diagnostics.Process)arg;
+                IntPtr hWnd = p.MainWindowHandle;
+                IntPtr tmpWnd = APIs.FindWindow(null, null);
+                uint hInst = 0;
+
+                long start = DateTime.Now.Ticks / 10000;
+
+                while (hWnd == IntPtr.Zero)
+                {
+                    if (APIs.GetParent(tmpWnd) == IntPtr.Zero)
+                    {
+                        uint dwProcID = 0;
+                        APIs.GetWindowThreadProcessId(tmpWnd, out dwProcID);
+
+                        hInst = dwProcID;
+
+                        if (hInst == (uint)p.Id)
+                        {
+                            hWnd = tmpWnd;
+                            if (APIs.IsWindow(hWnd) && APIs.IsWindowVisible(hWnd))
+                                break;
+                            else
+                            {
+                                tmpWnd = APIs.FindWindow(null, null);
+                                continue;
+                            }
+                        }
+                    }
+
+                    tmpWnd = APIs.GetWindow(tmpWnd, (int)APIs.GetWindowFlags.GW_HWNDNEXT);
+
+                    if (tmpWnd == IntPtr.Zero)
+                        tmpWnd = APIs.FindWindow(null, null);
+
+                    else
+                    {
+                        int length = APIs.GetWindowTextLength(tmpWnd);
+                        System.Text.StringBuilder sb = new System.Text.StringBuilder(length + 1);
+                        APIs.GetWindowText(tmpWnd, sb, sb.Capacity);
+
+                        if (sb.ToString().IndexOf("Error") > -1)
+                            return;
+
+                        else if (sb.ToString().IndexOf("VNC Authentication") > -1)
+                        {
+                            //                        start = DateTime.Now.Ticks / 10000;
+                            tmpWnd = APIs.FindWindow(null, null);
+                        }
+
+                        else if (sb.ToString().IndexOf("VNC Viewer") > -1)
+                        {
+                            //                        start = DateTime.Now.Ticks / 10000;
+                            tmpWnd = APIs.FindWindow(null, null);
+                        }
+                    }
+
+                    System.Threading.Thread.Sleep(50);
+
+                    long end = DateTime.Now.Ticks / 10000;
+
+                    // 10초 이상 걸릴경우 에러
+                    if (end - start > 10000)
+                    {
+                        System.Windows.MessageBox.Show("원격 접속에 실패했습니다.");
+                        return;
+                    }
+                }
+
+                int len = APIs.GetWindowTextLength(hWnd);
+                System.Text.StringBuilder sb2 = new System.Text.StringBuilder(len + 1);
+                APIs.GetWindowText(hWnd, sb2, sb2.Capacity);
+
+                // VNC Viewer의 윈도우 스타일을 구한다.
+                uint styles = (uint)APIs.GetWindowLong(hWnd, (int)APIs.GetWindowLongFlags.GWL_STYLE);
+                // 기존의 스타일을 저장해 놓는다.
+                vncstyles = styles;
+                // 스타일에서 타이틀 바를 없앤다.
+                styles &= ~(uint)(APIs.WindowStyles.WS_CAPTION | APIs.WindowStyles.WS_SYSMENU | APIs.WindowStyles.WS_THICKFRAME);
+                // 수정한 스타일을 재지정한다.
+                APIs.SetWindowLong(hWnd, (int)APIs.GetWindowLongFlags.GWL_STYLE, (IntPtr)styles);
+                // 부모를 재설정한다.
+                APIs.SetParent(hWnd, this.Handle);
+            }
+            catch (System.Exception e)
+            {
+                Debug.WriteLine(e.Message);
+            }
+}
