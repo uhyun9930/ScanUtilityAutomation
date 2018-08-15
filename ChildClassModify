@@ -1,0 +1,113 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace ScanUtility_Automation
+{
+    class DocumentMode : Mode
+    {
+        public DocumentMode()
+        { 
+            
+        }
+
+        public int modeNum = 0;
+        public int sizeNum;
+        public int colorNum;
+        public int resolutionNum;
+        public int dataTypeNum;
+        public int dataTypeOptionNum;
+
+        public String[] sizeArray = { "A4", "A5", "A5R", "A6", "A6R", "Letter", "Statement", "StatementR", "명함 용지", "전체 평판 크기" };
+        public String[] colorArray = { "컬러", "회색조", "흑백" };
+        public String[] resolutionArray = { "75dpi", "100dpi", "150dpi", "200dpi", "300dpi", "400dpi", "600dpi" };
+        public String[] dataTypeArray = { "TIFF", "PNG", "PDF(단일 페이지)", "PDF" };
+        public String[,] waitArray = { { "N", "O" }, { "N", "O" }, { "N", "O" }, { "O", "O" } };
+
+        public override void SetSize(String size)
+        {
+            for (int i = 0; i < sizeArray.Length; i++)
+            {
+                if (sizeArray[i] == size) { sizeNum = i; }
+            }
+        }
+        public override void SetColor(String color)
+        {
+            for (int i = 0; i < colorArray.Length; i++)
+            {
+                if (colorArray[i] == color) { colorNum = i; }
+            }
+        }
+        public override void SetResolution(String resol)
+        {
+            for (int i = 0; i < resolutionArray.Length; i++)
+            {
+                if (resolutionArray[i] == resol) { resolutionNum = i; }
+            }
+        }
+        public override void SetDataType(String type)
+        {
+            for (int i = 0; i < dataTypeArray.Length; i++)
+            {
+                if (dataTypeArray[i] == type) { dataTypeNum = i; }
+            }
+        }
+        public override void SetDataTypeOption(String opt)
+        {
+            for (int i = 0; i < dataTypeArray.Length; i++)
+            {
+                if (dataTypeArray[i] == opt) { dataTypeOptionNum = i; }
+            }
+        }
+        public override int GetSizeNum()
+        {
+            return sizeNum;
+        }
+        public override int GetColorNum()
+        {
+            return colorNum;
+        }
+        public override int GetResolutionNum()
+        {
+            return resolutionNum;
+        }
+        public override int GetDataTypeNum()
+        {
+            return dataTypeNum;
+        }
+        public override int GetDataTypeOptionNum()
+        {
+            return dataTypeOptionNum;
+        }
+
+        public override int GetModeNum()
+        {
+            return modeNum;
+        }
+
+        public override String[] GetSizeArray()
+        {
+            return sizeArray;
+        }
+
+        public override String[] GetColorArray()
+        {
+            return colorArray;
+        }
+
+        public override String[] GetResolutionArray()
+        {
+            return resolutionArray;
+        }
+
+        public override String[] GetDataTypeArray()
+        {
+            return dataTypeArray;
+        }
+        public override String[,] GetWaitArray()
+        {
+            return waitArray;
+        }
+    }
+}
